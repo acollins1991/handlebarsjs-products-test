@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com/" >
+        <link rel="dns-prefetch" href="https://picsum.photos/" >
+        <link rel="dns-prefetch" href="https://via.placeholder.com/" >
+
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.6/handlebars.js" integrity="sha512-MQkEjxbZvzs4TX8ES4/tTIyaYdtDlJzVocnPo0GoysTR0jCmNg0P2is7uqpCoWxmoS9X84CDVzuWgZD/R/Q2oQ==" crossorigin="anonymous"></script>
+        <script defer>
+            window.addEventListener('DOMContentLoaded', () => {
+
+                const app = document.querySelector('#app');
+                const template = Handlebars.compile(app.innerHTML);
+                const productCatalog = [
+                    {
+                        id: 1234133513,
+                        name: 'Jumper',
+                        image: 'https://picsum.photos/seed/1234133513/200/300',
+                        stock: 1
+                    },
+                    {
+                        id: 546234133513,
+                        name: 'Gloves',
+                        image: 'https://picsum.photos/seed/546234133513/200/300',
+                        stock: 0
+                    }
+                ];
+
+                const productElementPlaceholder = () => {
+                    const element = document.createElement('div');
+                    element.insertAdjacentHTML( 'beforeend', `
+                        <span>Loading...</span>
+                        <img src="https://via.placeholder.com/200x300" width="200" height="300">
+                    `);
+                    return element;
+                };
+
+                const getProduct = ( productID ) => {
+                    return new Promise( (resolve, reject) => {
+                        setTimeout( () => {
+                            const product = productCatalog.find( product => product.id === productID );
+                            if( product ) {
+                                const img = new Image();
+                                img.onload = () => { 
+                                    resolve(product);
+                                };
+                                img.src = product.image;
+                            } else {
+                                reject();
+                            }
+                        }, 1000 );
+                    } );
+                };
+                const showProduct = async ( productID ) => {
+                    const productData = await getProduct( productID );
+                    const productElements = document.querySelectorAll(`div.product${productID}`)
+                    if( !productElements ) {
+                        return;
+                    }
+                    productElements.forEach( element => {
+                        const span = element.querySelector('span');
+                        const img = element.querySelector('img');
+                        img.setAttribute('src', productData.image);
+                        if( productData.stock ) {
+                            span.innerHTML = productData.name;
+                        } else {
+                            span.innerHTML = `<strike>${productData.name}</strike>, OUT OF STOCK`;
+                            img.style.opacity = '0.5';
+                        }
+                    } );
+                };
+
+                Handlebars.registerHelper('product', (productID) => {
+                    const element = productElementPlaceholder();
+                    element.className = `product${productID}`;
+                    showProduct(productID);
+                    return new Handlebars.SafeString(element.outerHTML);
+                });
+
+                document.body.insertAdjacentHTML("beforeend", template());
+
+            });
+        </script>
+    </head>
+    <body>
+        <template id="app">
+            {{ product 1234133513 }}
+            {{ product 546234133513 }}
+        </template>
+    </body>
+</html>
